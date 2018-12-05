@@ -1,0 +1,1 @@
+Add this to a ros project and run "rosrun wibotic_ros wibotic.py" to start publishing socket data to rostopic.
