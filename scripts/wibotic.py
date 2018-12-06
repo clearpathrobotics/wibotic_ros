@@ -60,9 +60,10 @@ def ros_setup():
     rate = rospy.Rate(10) # 10hz, controls how often to publish
     while not rospy.is_shutdown():
         message = msg.get_current_msg()
-        message.header.stamp = rospy.Time.now()
-        pub.publish(message) #Message is updated as data is received
-
+        if (message.TX.EthIPAddr != ''):
+            message.header.stamp = rospy.Time.now()
+            pub.publish(message) #Message is updated as data is received
+        rate.sleep()
 def websocket(thread_name):
     try:
         ws = OpenClient('ws://192.168.2.20/ws', protocols=['wibotic'])
