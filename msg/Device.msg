@@ -1,4 +1,3 @@
-Header header
 string device
 string EthIPAddr
 string MacAddress

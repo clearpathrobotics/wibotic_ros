@@ -15,8 +15,6 @@ class ros_message:
         self.msg = wibotic_msg()
 
     def push_to_msg(self, device, param, data):
-        #TODO: rospy time
-        # self.msg.header.stamp = rospy.Time.now()
         self.msg = wibotic_msg_funcs.push_to_wibotic_msg(device, param, data, self.msg) # switch-case of setter functions
 
     def get_current_msg(self):
@@ -43,7 +41,7 @@ class OpenClient(WebSocketClient):
         for returned in packet_tools.process_data(data):
             device, param, value = returned.get_data()
             # print (device + " " + param + " " + str(value)) #uncommenting prints all processed received messages
-            
+
             if (value == "param_update" or param == "unrecognized"): #this returns confirmation of param update (no change to msg)
                 continue
             if (param != "DevMACOUI" and param != "DevMACSpecific"):
@@ -62,7 +60,9 @@ def ros_setup():
     rospy.init_node('Wibotic', anonymous=True)
     rate = rospy.Rate(10) # 10hz, controls how often to publish
     while not rospy.is_shutdown():
-        pub.publish(msg.get_current_msg()) #Message is updated as data is received
+        message = msg.get_current_msg()
+        message.header.stamp = rospy.Time.now()
+        pub.publish(message) #Message is updated as data is received
 
 def websocket(thread_name):
     try:
