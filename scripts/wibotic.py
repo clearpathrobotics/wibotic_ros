@@ -8,6 +8,7 @@ import wibotic_msg_funcs
 import packet_tools
 import binascii
 
+paramToRead = ["EthIPAddr", "DevMACOUI", "DevMACSpecific"] #note this is setup only for TX, won't automatically get pushed to rostopic
 macaddress = []
 
 class ros_message:
@@ -22,25 +23,24 @@ class ros_message:
 
 class OpenClient(WebSocketClient):
     def opened(self):
-        print (">> opened")
-        reqToSend = ["EthIPAddr", "DevMACOUI", "DevMACSpecific"] #note this is setup only for TX
-        for req in reqToSend:
+        rospy.loginfo(">> Websocket Opened")
+        for req in paramToRead:
             p = BinaryMessage(packet_tools.build_read_request("TX",req))
             self.send(p)
         #Note: like above a build_write_request can also be created
 
     def closed(self, code, reason=None):
-        print (">> closed")
-        print "Closed down", code, reason
+        rospy.loginfo(">> Websocket Closed")
+        rospy.loginfo ("Closed down"+ str(code) + str(reason))
 
     def received_message(self, message):
-        # print (">> received_message\n")
+        # rospy.loginfo(">> received_message\n")
         data = []
         for x in range(0, len(message.data)):
             data.append(binascii.hexlify(message.data[x]))
         for returned in packet_tools.process_data(data):
             device, param, value = returned.get_data()
-            # print (device + " " + param + " " + str(value)) #uncommenting prints all processed received messages
+            # rospy.loginfo(device + " " + param + " " + str(value)) #uncommenting prints all processed received messages
 
             if (value == "param_update" or param == "unrecognized"): #this returns confirmation of param update (no change to msg)
                 continue
@@ -52,12 +52,11 @@ class OpenClient(WebSocketClient):
                 macaddress.append(value[1])
                 macaddress.append(value[0])
                 if (len(macaddress) == 6):
-                    print("Mac Built")
+                    # rospy.loginfo("MacAddress Built")
                     msg.push_to_msg(device, "MacAddress", macaddress)
 
 def ros_setup():
     pub = rospy.Publisher('wibotic_websocket', wibotic_msg, queue_size=10)
-    rospy.init_node('Wibotic', anonymous=True)
     rate = rospy.Rate(10) # 10hz, controls how often to publish
     while not rospy.is_shutdown():
         message = msg.get_current_msg()
@@ -73,6 +72,7 @@ def websocket(thread_name):
         ws.close()
 
 if __name__ == '__main__':
+    rospy.init_node('Wibotic', anonymous=True)
     msg = ros_message()
     thread.start_new_thread(websocket, ("websocket_thread",)) #running ROS in another thread
     ros_setup();

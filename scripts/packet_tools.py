@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import struct
 import binascii
+import rospy
 
 def DeviceID(device):
     switcher = {
@@ -202,8 +203,8 @@ def process_data(data):
         return all_adc_data
     
     def unrecognized_response(data): #if unrecognized first byte
-        print("Unrecognized message received: \n")
-        print(str(data))
+        rospy.loginfo("Unrecognized message received: \n")
+        rospy.loginfo(str(data))
         device_id = DeviceID(data.pop(0)) #popped id, only real data left
         return [UnrecognizedResponse(device_id, data)]
 
@@ -216,7 +217,7 @@ def process_data(data):
     response_type = _ResponseType(data.pop(0))
     func = event.get(response_type, unrecognized_response) #if doesnt exist in _ResponseType this returns unrecognized
     if (func == unrecognized_response):
-        print response_type
+        rospy.loginfo(response_type)
     return func(data)
     
 def build_read_request(device, parameter):
@@ -227,11 +228,11 @@ def build_read_request(device, parameter):
     parameter_id = getParamID(parameter)
     byte_string = '01' + device + '000000' + parameter_id
 
-    print("built hex read request: " + str(byte_string))
+    rospy.loginfo("built hex read request for "+ parameter +": " + str(byte_string))
 
     #get message ready to be made into BinaryMessage
     ba = (binascii.unhexlify(byte_string))
-    print("message has been encoded")
+    rospy.loginfo("message has been encoded")
     return ba
 
 def build_write_request(device, parameter, data):
@@ -248,9 +249,9 @@ def build_write_request(device, parameter, data):
     lil_end_data = data[6] + data[7] + data[4] + data[5] + data[2] + data[3] + data[0] + data[1] #little endian of hex data string
     byte_string = '03' + device + '000000' + parameter_id + lil_end_data
 
-    print("built hex write request: " + str(byte_string))
+    rospy.loginfo("built hex write request "+ parameter +": " + str(byte_string))
 
     #get message ready to be made into BinaryMessage
     ba = (binascii.unhexlify(byte_string))
-    print("message has been encoded")
+    rospy.loginfo("message has been encoded")
     return ba
