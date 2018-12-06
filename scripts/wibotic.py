@@ -60,7 +60,7 @@ def ros_setup():
     rate = rospy.Rate(10) # 10hz, controls how often to publish
     while not rospy.is_shutdown():
         message = msg.get_current_msg()
-        if (message.TX.EthIPAddr != ''):
+        if (message.TX.PacketCount != 0):
             message.header.stamp = rospy.Time.now()
             pub.publish(message) #Message is updated as data is received
         rate.sleep()

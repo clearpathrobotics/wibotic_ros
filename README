@@ -1,4 +1,8 @@
-Add this to a ros project and run "rosrun wibotic_ros wibotic.py" to start publishing socket data to rostopic.
+1. Add this to a ros project.
+2. run 'rosdep update'
+3. run 'rosdep install --from-paths src --ignore-src --rosdistro=kinetic -y' Note: change kinetic to your distro
+4. source devel/setup.bash
+5. run "rosrun wibotic_ros wibotic.py" to start publishing socket data to rostopic.
 
 Checkout the help folder for:
 - Wibotic.html: an html tool for basic websocket communication
