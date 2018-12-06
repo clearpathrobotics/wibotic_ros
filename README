@@ -1,1 +1,6 @@
 Add this to a ros project and run "rosrun wibotic_ros wibotic.py" to start publishing socket data to rostopic.
+
+Checkout the help folder for:
+- Wibotic.html: an html tool for basic websocket communication
+- WiBotic_Network_API.pdf: doc for Wibotic websocket api
+
