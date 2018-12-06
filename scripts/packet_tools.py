@@ -150,12 +150,6 @@ class ParamResponse:
         self.data = data
         
     def get_data(self):
-        # adc_type = AdcTypes(str(self.param))
-        # hex = self.data[3] + self.data[2] + self.data[1] + self.data[0]
-        # if (adc_type == "float"):
-        #     value = struct.unpack('!f', hex.decode('hex'))[0]
-        # else:
-        #     value = int(hex, 16)
         return (self.device,str(self.param),self.data) #returns tuple, note data is array of returned hex vals
 
 class ParamUpdate:
@@ -166,6 +160,15 @@ class ParamUpdate:
         
     def get_data(self):
         return (self.device,str(self.param),"param_update") #returns tuple, note data is array of returned hex vals
+
+class UnrecognizedResponse:
+    """ Contains new param data returned """
+    def __init__(self, device, data):
+        self.device = device
+        self.data = data
+        
+    def get_data(self):
+        return (self.device,"unrecognized",self.data) #returns tuple, note data is array of returned hex vals
 
 def process_data(data):
     """ Takes binary data and processes it into an object that can be 
@@ -198,6 +201,12 @@ def process_data(data):
             all_adc_data.append(ADCUpdate(device_id, adc_id, adc_data))
         return all_adc_data
     
+    def unrecognized_response(data): #if unrecognized first byte
+        print("Unrecognized message received: \n")
+        print(str(data))
+        device_id = DeviceID(data.pop(0)) #popped id, only real data left
+        return [UnrecognizedResponse(device_id, data)]
+
     #this calls functions depending on response_type
     event = {
         _ResponseType.PARAM_UPDATE: param_update,
@@ -205,7 +214,10 @@ def process_data(data):
         _ResponseType.ADC_UPDATE: adc_update
     }
     response_type = _ResponseType(data.pop(0))
-    return event[response_type](data)
+    func = event.get(response_type, unrecognized_response) #if doesnt exist in _ResponseType this returns unrecognized
+    if (func == unrecognized_response):
+        print response_type
+    return func(data)
     
 def build_read_request(device, parameter):
     if device == "RX" or device == "Charger" or device == 2:

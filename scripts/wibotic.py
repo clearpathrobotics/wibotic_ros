@@ -20,7 +20,6 @@ class ros_message:
         self.msg = wibotic_msg_funcs.push_to_wibotic_msg(device, param, data, self.msg) # switch-case of setter functions
 
     def get_current_msg(self):
-        # print(self.msg)
         return self.msg
 
 class OpenClient(WebSocketClient):
@@ -44,7 +43,8 @@ class OpenClient(WebSocketClient):
         for returned in packet_tools.process_data(data):
             device, param, value = returned.get_data()
             # print (device + " " + param + " " + str(value)) #uncommenting prints all processed received messages
-            if (value == "param_update"): #this returns confirmation of param update (no change to msg)
+            
+            if (value == "param_update" or param == "unrecognized"): #this returns confirmation of param update (no change to msg)
                 continue
             if (param != "DevMACOUI" and param != "DevMACSpecific"):
                 msg.push_to_msg(device, param, value)
