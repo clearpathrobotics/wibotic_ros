@@ -14,12 +14,23 @@ macaddress = []
 class ros_message:
     def __init__(self):
         self.msg = wibotic_msg()
+        self.last_time_obtained = rospy.Time.now()
+        self.time_pushed = rospy.Time.now()
+
 
     def push_to_msg(self, device, param, data):
+        self.time_pushed = rospy.Time.now()
         self.msg = wibotic_msg_funcs.push_to_wibotic_msg(device, param, data, self.msg) # switch-case of setter functions
 
     def get_current_msg(self):
-        return self.msg
+        if (self.time_pushed >= self.last_time_obtained): #if no new messages return empty message (these dont publish)
+            self.last_time_obtained = rospy.Time.now()
+            return self.msg
+        return wibotic_msg()
+
+    def set_to_zero(self):
+        empty_message = wibotic_msg()
+        self.msg = empty_message
 
 class OpenClient(WebSocketClient):
     def opened(self):
@@ -30,6 +41,7 @@ class OpenClient(WebSocketClient):
         #Note: like above a build_write_request can also be created
 
     def closed(self, code, reason=None):
+        msg.set_to_zero()
         rospy.loginfo(">> Websocket Closed")
         rospy.loginfo ("Closed down"+ str(code) + str(reason))
 
@@ -57,7 +69,7 @@ class OpenClient(WebSocketClient):
 
 def ros_setup():
     pub = rospy.Publisher('wibotic_websocket', wibotic_msg, queue_size=10)
-    rate = rospy.Rate(10) # 10hz, controls how often to publish
+    rate = rospy.Rate(1) # 10hz, controls how often to publish
     while not rospy.is_shutdown():
         message = msg.get_current_msg()
         if (message.TX.PacketCount != 0):
