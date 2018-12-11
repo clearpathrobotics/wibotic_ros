@@ -1,0 +1,14 @@
+string device
+string EthIPAddr
+string MacAddress
+uint32 PacketCount
+uint8 ChargeState
+uint16 Flags
+uint16 PowerLevel
+float32 VMonBattProg
+float32 VRect
+float32 TBoard
+float32 ICharger
+float32 IBattery
+float32 TargetIBatt
+float32 IMaster

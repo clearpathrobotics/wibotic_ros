@@ -1,0 +1,20 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/home/skavi/catkin_charger/devel/include",
+        "/home/skavi/catkin_nav/devel/include",
+        "/opt/ros/kinetic/include",
+        "/home/skavi/catkin_charger/src/learning_tf/include",
+        "/home/skavi/catkin_charger/src/simple_navigation_goals/include",
+        "/home/skavi/catkin_charger/src/wibotic_ros/include",
+        "/usr/include"
+      ],
+      "name": "Linux"
+    }
+  ]
+}

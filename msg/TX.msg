@@ -1,0 +1,17 @@
+string device
+string EthIPAddr
+string MacAddress
+uint32 PacketCount
+uint8 ChargeState
+uint16 Flags
+float32 VMon3v3
+float32 VMon5v
+float32 IMon5v
+float32 VMon12v
+float32 IMon12v
+float32 VMonGateDriver
+float32 IMonGateDriver
+float32 VMonPA
+float32 IMonPa
+float32 TMonPa
+float32 VMonBatt

@@ -1,3 +1,3 @@
 Header header
-wibotic_ros/Device TX
-wibotic_ros/Device RX
+wibotic_ros/TX TX
+wibotic_ros/RX RX
