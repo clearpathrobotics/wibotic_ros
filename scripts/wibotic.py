@@ -8,6 +8,7 @@ import wibotic_msg_funcs
 import packet_tools
 import binascii
 
+ip_address = 'ws://192.168.2.20/ws'
 paramToRead = ["EthIPAddr", "DevMACOUI", "DevMACSpecific"] #note this is setup only for TX, won't automatically get pushed to rostopic
 macaddress = []
 
@@ -69,16 +70,16 @@ class OpenClient(WebSocketClient):
 
 def ros_setup():
     pub = rospy.Publisher('wibotic_websocket', wibotic_msg, queue_size=10)
-    rate = rospy.Rate(1) # 10hz, controls how often to publish
+    rate = rospy.Rate(1) # 1hz, controls how often to publish
     while not rospy.is_shutdown():
         message = msg.get_current_msg()
         if (message.TX.PacketCount != 0):
             message.header.stamp = rospy.Time.now()
             pub.publish(message) #Message is updated as data is received
         rate.sleep()
-def websocket(thread_name):
+def websocket(thread_name, ip):
     try:
-        ws = OpenClient('ws://192.168.2.20/ws', protocols=['wibotic'])
+        ws = OpenClient(ip, protocols=['wibotic'])
         ws.connect()
         ws.run_forever()
     except KeyboardInterrupt:
@@ -87,5 +88,5 @@ def websocket(thread_name):
 if __name__ == '__main__':
     rospy.init_node('Wibotic', anonymous=True)
     msg = ros_message()
-    thread.start_new_thread(websocket, ("websocket_thread",)) #running ROS in another thread
+    thread.start_new_thread(websocket, ("websocket_thread", ip_address)) #running ROS in another thread
     ros_setup();
