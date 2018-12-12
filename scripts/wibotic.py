@@ -8,9 +8,11 @@ import wibotic_msg_funcs
 import packet_tools
 import binascii
 
-ip_address = 'ws://192.168.2.20/ws'
 paramToRead = ["EthIPAddr", "DevMACOUI", "DevMACSpecific"] #note this is setup only for TX, won't automatically get pushed to rostopic
 macaddress = []
+ip_address = ''
+ros_topic = ''
+rostopicFrequency = 0
 
 class ros_message:
     def __init__(self):
@@ -47,7 +49,7 @@ class OpenClient(WebSocketClient):
         rospy.loginfo ("Closed down"+ str(code) + str(reason))
 
     def received_message(self, message):
-        # rospy.loginfo(">> received_message\n")
+        # rospy.loginfo(">> received_message @ " + str(rospy.Time.now().to_nsec()) + "\n")
         data = []
         for x in range(0, len(message.data)):
             data.append(binascii.hexlify(message.data[x]))
@@ -69,14 +71,26 @@ class OpenClient(WebSocketClient):
                     msg.push_to_msg(device, "MacAddress", macaddress)
 
 def ros_setup():
-    pub = rospy.Publisher('wibotic_websocket', wibotic_msg, queue_size=10)
-    rate = rospy.Rate(1) # 1hz, controls how often to publish
+    pub = rospy.Publisher(ros_topic, wibotic_msg, queue_size=10)
+    rate = rospy.Rate(rostopicFrequency) #controls how often to publish
     while not rospy.is_shutdown():
         message = msg.get_current_msg()
         if (message.TX.PacketCount != 0):
             message.header.stamp = rospy.Time.now()
             pub.publish(message) #Message is updated as data is received
         rate.sleep()
+
+def check_params():
+    ip_address = rospy.get_param('~ip_address', 'ws://192.168.2.20/ws')
+    rostopicFrequency = rospy.get_param('~topic_frequency', 1) #default to 1
+    ros_topic = rospy.get_param('~ros_topic', 'wibotic_websocket')
+    if (rostopicFrequency > 10):
+        rospy.logfatal('~topic_frequency can\'t be set larger than 10')
+        return
+    if (str(ip_address) != 'ws://192.168.2.20/ws'):
+        rospy.loginfo("Make sure websocket open on ip: " + str(ip_address))
+    return (str(ip_address), rostopicFrequency, str(ros_topic))
+    
 def websocket(thread_name, ip):
     try:
         ws = OpenClient(ip, protocols=['wibotic'])
@@ -87,6 +101,7 @@ def websocket(thread_name, ip):
 
 if __name__ == '__main__':
     rospy.init_node('Wibotic', anonymous=True)
+    ip_address, rostopicFrequency, ros_topic = check_params()
     msg = ros_message()
     thread.start_new_thread(websocket, ("websocket_thread", ip_address)) #running ROS in another thread
     ros_setup();
