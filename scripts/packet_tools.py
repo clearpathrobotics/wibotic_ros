@@ -203,9 +203,9 @@ def process_data(data):
         return all_adc_data
     
     def unrecognized_response(data): #if unrecognized first byte
-        rospy.loginfo("Unrecognized message received: \n")
+        rospy.loginfo("Unrecognized message received:")
         rospy.loginfo(str(data))
-        device_id = DeviceID(data.pop(0)) #popped id, only real data left
+        device_id = "For device: " + DeviceID(data.pop(0)) #popped id, only real data left
         return [UnrecognizedResponse(device_id, data)]
 
     #this calls functions depending on response_type

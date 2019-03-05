@@ -1,7 +1,8 @@
 #!/usr/bin/python
 import rospy
 from wibotic_ros.msg import Wibotic as wibotic_msg
-import thread
+import threading 
+import time
 from ws4py.client.threadedclient import WebSocketClient
 from ws4py.messaging import BinaryMessage
 import wibotic_msg_funcs
@@ -17,19 +18,22 @@ rostopicFrequency = 0
 class ros_message:
     def __init__(self):
         self.msg = wibotic_msg()
+        self.lock = threading.Lock()
         self.last_time_obtained = rospy.Time.now()
         self.time_pushed = rospy.Time.now()
 
 
     def push_to_msg(self, device, param, data):
-        self.time_pushed = rospy.Time.now()
-        self.msg = wibotic_msg_funcs.push_to_wibotic_msg(device, param, data, self.msg) # switch-case of setter functions
+        with self.lock:
+            self.time_pushed = rospy.Time.now()
+            self.msg = wibotic_msg_funcs.push_to_wibotic_msg(device, param, data, self.msg) # switch-case of setter functions
 
     def get_current_msg(self):
-        if (self.time_pushed >= self.last_time_obtained): #if no new messages return empty message (these dont publish)
-            self.last_time_obtained = rospy.Time.now()
-            return self.msg
-        return wibotic_msg()
+        with self.lock:
+            if (self.time_pushed >= self.last_time_obtained): #if no new messages return empty message (these dont publish)
+                self.last_time_obtained = rospy.Time.now()
+                return self.msg
+            return wibotic_msg()
 
     def set_to_zero(self):
         empty_message = wibotic_msg()
@@ -46,7 +50,7 @@ class OpenClient(WebSocketClient):
     def closed(self, code, reason=None):
         msg.set_to_zero()
         rospy.loginfo(">> Websocket Closed")
-        rospy.loginfo ("Closed down"+ str(code) + str(reason))
+        rospy.loginfo ("Code: " + str(code) + "Reason: " + str(reason))
 
     def received_message(self, message):
         # rospy.loginfo(">> received_message @ " + str(rospy.Time.now().to_nsec()) + "\n")
@@ -70,15 +74,6 @@ class OpenClient(WebSocketClient):
                     # rospy.loginfo("MacAddress Built")
                     msg.push_to_msg(device, "MacAddress", macaddress)
 
-def ros_setup():
-    pub = rospy.Publisher(ros_topic, wibotic_msg, queue_size=10)
-    rate = rospy.Rate(rostopicFrequency) #controls how often to publish
-    while not rospy.is_shutdown():
-        message = msg.get_current_msg()
-        if (message.TX.PacketCount != 0):
-            message.header.stamp = rospy.Time.now()
-            pub.publish(message) #Message is updated as data is received
-        rate.sleep()
 
 def check_params():
     ip_address = rospy.get_param('~ip_address', 'ws://192.168.2.20/ws')
@@ -92,16 +87,45 @@ def check_params():
     return (str(ip_address), rostopicFrequency, str(ros_topic))
     
 def websocket(thread_name, ip):
+    t = threading.currentThread()
     try:
         ws = OpenClient(ip, protocols=['wibotic'])
         ws.connect()
-        ws.run_forever()
+        while getattr(t, "still_run", True) and not ws.terminated:
+            time.sleep(.5)
+        ws.close()
     except KeyboardInterrupt:
         ws.close()
+
+def start_websocket(ip):
+    t = threading.Thread(target=websocket, args=("websocket_thread",ip)) #running ROS in another thread
+    t.still_run = True
+    t.start()
+    return (t)
 
 if __name__ == '__main__':
     rospy.init_node('Wibotic', anonymous=True)
     ip_address, rostopicFrequency, ros_topic = check_params()
     msg = ros_message()
-    thread.start_new_thread(websocket, ("websocket_thread", ip_address)) #running ROS in another thread
-    ros_setup();
+    t = start_websocket(ip_address)
+    pub = rospy.Publisher(ros_topic, wibotic_msg, queue_size=10)
+    rate = rospy.Rate(rostopicFrequency) # controls how often to publish
+    disconnect_counter = 0
+    while not rospy.is_shutdown():
+        message = msg.get_current_msg()
+        if (message.TX.PacketCount != 0):
+            disconnect_counter = 0
+            message.header.stamp = rospy.Time.now()
+            pub.publish(message) #Message is updated as data is received
+        else:
+            disconnect_counter += 1
+        if disconnect_counter > 10:
+            rospy.logwarn('Restarting WebSocketClient')
+            disconnect_counter = 0
+            while t.isAlive():
+                t.still_run = False
+                t.join(timeout=5)
+            t = start_websocket()
+        rate.sleep()
+    t.still_run = False
+    t.join(timeout=5)
