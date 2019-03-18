@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import rospy
 from wibotic_ros.msg import Wibotic as wibotic_msg
-import threading 
+import threading
 import time
 from ws4py.client.threadedclient import WebSocketClient
 from ws4py.messaging import BinaryMessage
@@ -85,7 +85,7 @@ def check_params():
     if (str(ip_address) != 'ws://192.168.2.20/ws'):
         rospy.loginfo("Make sure websocket open on ip: " + str(ip_address))
     return (str(ip_address), rostopicFrequency, str(ros_topic))
-    
+
 def websocket(thread_name, ip):
     t = threading.currentThread()
     try:
@@ -125,7 +125,7 @@ if __name__ == '__main__':
             while t.isAlive():
                 t.still_run = False
                 t.join(timeout=5)
-            t = start_websocket()
+            t = start_websocket(ip_address)
         rate.sleep()
     t.still_run = False
     t.join(timeout=5)
