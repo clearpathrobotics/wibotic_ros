@@ -5,7 +5,6 @@ project(wibotic_ros)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
   rospy
   std_msgs
   message_generation
@@ -30,7 +29,7 @@ generate_messages(
 ## catkin specific configuration ##
 ###################################
 catkin_package(
- CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+ CATKIN_DEPENDS rospy std_msgs message_runtime
 )
 
 ###########
